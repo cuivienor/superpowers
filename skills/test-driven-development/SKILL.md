@@ -5,6 +5,17 @@ description: Use when implementing any feature or bugfix, before writing impleme
 
 # Test-Driven Development (TDD)
 
+## Language-Specific Examples
+
+This skill uses **Ruby/Rails and Minitest** as the default.
+
+For language-specific patterns, see:
+- **TypeScript** (Jest, Vitest): `@examples/typescript.md`
+- **Python** (pytest): `@examples/python.md`
+- **Go** (testing): `@examples/go.md`
+
+---
+
 ## Overview
 
 Write the test first. Watch it fail. Write minimal code to pass.
@@ -73,34 +84,36 @@ digraph tdd_cycle {
 Write one minimal test showing what should happen.
 
 <Good>
-```typescript
-test('retries failed operations 3 times', async () => {
-  let attempts = 0;
-  const operation = () => {
-    attempts++;
-    if (attempts < 3) throw new Error('fail');
-    return 'success';
-  };
+```ruby
+test "#retry_operation retries failed operations 3 times" do
+  attempts = 0
+  operation = lambda do
+    attempts += 1
+    raise StandardError, "fail" if attempts < 3
+    "success"
+  end
 
-  const result = await retryOperation(operation);
+  result = retry_operation(operation)
 
-  expect(result).toBe('success');
-  expect(attempts).toBe(3);
-});
+  assert_equal("success", result)
+  assert_equal(3, attempts)
+end
 ```
 Clear name, tests real behavior, one thing
 </Good>
 
 <Bad>
-```typescript
-test('retry works', async () => {
-  const mock = jest.fn()
-    .mockRejectedValueOnce(new Error())
-    .mockRejectedValueOnce(new Error())
-    .mockResolvedValueOnce('success');
-  await retryOperation(mock);
-  expect(mock).toHaveBeenCalledTimes(3);
-});
+```ruby
+test "retry works" do
+  mock = mock()
+  mock.expects(:call)
+    .raises(StandardError.new)
+    .twice
+  mock.expects(:call)
+    .returns("success")
+
+  retry_operation(mock)
+end
 ```
 Vague name, tests mock not code
 </Bad>
@@ -115,7 +128,7 @@ Vague name, tests mock not code
 **MANDATORY. Never skip.**
 
 ```bash
-npm test path/to/test.test.ts
+/opt/dev/bin/dev test path/to/test_file.rb
 ```
 
 Confirm:
@@ -132,33 +145,31 @@ Confirm:
 Write simplest code to pass the test.
 
 <Good>
-```typescript
-async function retryOperation<T>(fn: () => Promise<T>): Promise<T> {
-  for (let i = 0; i < 3; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      if (i === 2) throw e;
-    }
-  }
-  throw new Error('unreachable');
-}
+```ruby
+def retry_operation(&block)
+  (0..2).each do |i|
+    begin
+      return block.call
+    rescue StandardError => e
+      raise e if i == 2
+    end
+  end
+  raise "unreachable"
+end
 ```
 Just enough to pass
 </Good>
 
 <Bad>
-```typescript
-async function retryOperation<T>(
-  fn: () => Promise<T>,
-  options?: {
-    maxRetries?: number;
-    backoff?: 'linear' | 'exponential';
-    onRetry?: (attempt: number) => void;
-  }
-): Promise<T> {
-  // YAGNI
-}
+```ruby
+def retry_operation(
+  &block,
+  max_retries: 3,
+  backoff: :linear,
+  on_retry: nil
+)
+  # YAGNI
+end
 ```
 Over-engineered
 </Bad>
@@ -170,7 +181,7 @@ Don't add features, refactor other code, or "improve" beyond the test.
 **MANDATORY.**
 
 ```bash
-npm test path/to/test.test.ts
+/opt/dev/bin/dev test path/to/test_file.rb
 ```
 
 Confirm:
@@ -292,33 +303,34 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 **Bug:** Empty email accepted
 
 **RED**
-```typescript
-test('rejects empty email', async () => {
-  const result = await submitForm({ email: '' });
-  expect(result.error).toBe('Email required');
-});
+```ruby
+test "#submit_form rejects empty email" do
+  result = submit_form(email: "")
+
+  assert_equal("Email required", result[:error])
+end
 ```
 
 **Verify RED**
 ```bash
-$ npm test
-FAIL: expected 'Email required', got undefined
+$ /opt/dev/bin/dev test test/forms/submit_form_test.rb
+FAIL: expected "Email required", got nil
 ```
 
 **GREEN**
-```typescript
-function submitForm(data: FormData) {
-  if (!data.email?.trim()) {
-    return { error: 'Email required' };
-  }
-  // ...
-}
+```ruby
+def submit_form(data)
+  if data[:email].to_s.strip.empty?
+    return { error: "Email required" }
+  end
+  # ...
+end
 ```
 
 **Verify GREEN**
 ```bash
-$ npm test
-PASS
+$ /opt/dev/bin/dev test test/forms/submit_form_test.rb
+1 tests, 1 assertions, 0 failures
 ```
 
 **REFACTOR**
