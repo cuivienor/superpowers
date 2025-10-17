@@ -5,17 +5,6 @@ description: Use when writing or changing tests, adding mocks, or tempted to add
 
 # Testing Anti-Patterns
 
-## Language-Specific Examples
-
-This skill uses **Ruby/Rails and Minitest** as the default.
-
-For language-specific anti-patterns, see:
-- **TypeScript** (Jest, Vitest): `@examples/typescript.md`
-- **Python** (pytest): `@examples/python.md`
-- **Go** (testing): `@examples/go.md`
-
----
-
 ## Overview
 
 Tests must verify real behavior, not mock behavior. Mocks are a means to isolate, not the thing being tested.
@@ -35,31 +24,31 @@ Tests must verify real behavior, not mock behavior. Mocks are a means to isolate
 ## Anti-Pattern 1: Testing Mock Behavior
 
 **The violation:**
-```ruby
-# ❌ BAD: Testing that the mock exists
-test "renders sidebar" do
-  get :show
-  assert_select "[data-testid='sidebar-mock']"
-end
+```typescript
+// ❌ BAD: Testing that the mock exists
+test('renders sidebar', () => {
+  render(<Page />);
+  expect(screen.getByTestId('sidebar-mock')).toBeInTheDocument();
+});
 ```
 
 **Why this is wrong:**
-- You're verifying the mock works, not that the controller/view works
+- You're verifying the mock works, not that the component works
 - Test passes when mock is present, fails when it's not
 - Tells you nothing about real behavior
 
 **your human partner's correction:** "Are we testing the behavior of a mock?"
 
 **The fix:**
-```ruby
-# ✅ GOOD: Test real component or don't mock it
-test "renders sidebar" do
-  get :show
-  assert_select "nav[role='navigation']"
-end
+```typescript
+// ✅ GOOD: Test real component or don't mock it
+test('renders sidebar', () => {
+  render(<Page />);  // Don't mock sidebar
+  expect(screen.getByRole('navigation')).toBeInTheDocument();
+});
 
-# OR if sidebar must be mocked for isolation:
-# Don't assert on the mock - test Page's behavior with sidebar present
+// OR if sidebar must be mocked for isolation:
+// Don't assert on the mock - test Page's behavior with sidebar present
 ```
 
 ### Gate Function
@@ -77,17 +66,17 @@ BEFORE asserting on any mock element:
 ## Anti-Pattern 2: Test-Only Methods in Production
 
 **The violation:**
-```ruby
-# ❌ BAD: destroy() only used in tests
-class Session
-  def destroy  # Looks like production API!
-    @workspace_manager&.destroy_workspace(id)
-    # ... cleanup
-  end
-end
+```typescript
+// ❌ BAD: destroy() only used in tests
+class Session {
+  async destroy() {  // Looks like production API!
+    await this._workspaceManager?.destroyWorkspace(this.id);
+    // ... cleanup
+  }
+}
 
-# In tests
-teardown { @session.destroy }
+// In tests
+afterEach(() => session.destroy());
 ```
 
 **Why this is wrong:**
@@ -97,20 +86,20 @@ teardown { @session.destroy }
 - Confuses object lifecycle with entity lifecycle
 
 **The fix:**
-```ruby
-# ✅ GOOD: Test utilities handle test cleanup
-# Session has no destroy() - it's stateless in production
+```typescript
+// ✅ GOOD: Test utilities handle test cleanup
+// Session has no destroy() - it's stateless in production
 
-# In test/support/test_helpers.rb
-module TestHelpers
-  def cleanup_session(session)
-    workspace = session.workspace_info
-    workspace_manager.destroy_workspace(workspace.id) if workspace
-  end
-end
+// In test-utils/
+export async function cleanupSession(session: Session) {
+  const workspace = session.getWorkspaceInfo();
+  if (workspace) {
+    await workspaceManager.destroyWorkspace(workspace.id);
+  }
+}
 
-# In tests
-teardown { cleanup_session(@session) }
+// In tests
+afterEach(() => cleanupSession(session));
 ```
 
 ### Gate Function
@@ -132,17 +121,17 @@ BEFORE adding any method to production class:
 ## Anti-Pattern 3: Mocking Without Understanding
 
 **The violation:**
-```ruby
-# ❌ BAD: Mock breaks test logic
-test "detects duplicate server" do
-  # Mock prevents config write that test depends on!
-  ToolCatalog.stub(:discover_and_cache_tools, nil) do
-    add_server(config)
-    assert_raises(DuplicateServerError) do
-      add_server(config)  # Should raise - but won't!
-    end
-  end
-end
+```typescript
+// ❌ BAD: Mock breaks test logic
+test('detects duplicate server', () => {
+  // Mock prevents config write that test depends on!
+  vi.mock('ToolCatalog', () => ({
+    discoverAndCacheTools: vi.fn().mockResolvedValue(undefined)
+  }));
+
+  await addServer(config);
+  await addServer(config);  // Should throw - but won't!
+});
 ```
 
 **Why this is wrong:**
@@ -151,17 +140,15 @@ end
 - Test passes for wrong reason or fails mysteriously
 
 **The fix:**
-```ruby
-# ✅ GOOD: Mock at correct level
-test "detects duplicate server" do
-  # Mock the slow part, preserve behavior test needs
-  MCPServerManager.stub(:start_server, true) do
-    add_server(config)  # Config written
-    assert_raises(DuplicateServerError) do
-      add_server(config)  # Duplicate detected ✓
-    end
-  end
-end
+```typescript
+// ✅ GOOD: Mock at correct level
+test('detects duplicate server', () => {
+  // Mock the slow part, preserve behavior test needs
+  vi.mock('MCPServerManager'); // Just mock slow server startup
+
+  await addServer(config);  // Config written
+  await addServer(config);  // Duplicate detected ✓
+});
 ```
 
 ### Gate Function
@@ -193,15 +180,15 @@ BEFORE mocking any method:
 ## Anti-Pattern 4: Incomplete Mocks
 
 **The violation:**
-```ruby
-# ❌ BAD: Partial mock - only fields you think you need
-mock_response = OpenStruct.new(
+```typescript
+// ❌ BAD: Partial mock - only fields you think you need
+const mockResponse = {
   status: 'success',
-  data: { user_id: '123', name: 'Alice' }
-  # Missing: metadata that downstream code uses
-)
+  data: { userId: '123', name: 'Alice' }
+  // Missing: metadata that downstream code uses
+};
 
-# Later: breaks when code accesses response.metadata.request_id
+// Later: breaks when code accesses response.metadata.requestId
 ```
 
 **Why this is wrong:**
@@ -213,14 +200,14 @@ mock_response = OpenStruct.new(
 **The Iron Rule:** Mock the COMPLETE data structure as it exists in reality, not just fields your immediate test uses.
 
 **The fix:**
-```ruby
-# ✅ GOOD: Mirror real API completeness
-mock_response = OpenStruct.new(
+```typescript
+// ✅ GOOD: Mirror real API completeness
+const mockResponse = {
   status: 'success',
-  data: { user_id: '123', name: 'Alice' },
-  metadata: { request_id: 'req-789', timestamp: 1234567890 }
-  # All fields real API returns
-)
+  data: { userId: '123', name: 'Alice' },
+  metadata: { requestId: 'req-789', timestamp: 1234567890 }
+  // All fields real API returns
+};
 ```
 
 ### Gate Function
