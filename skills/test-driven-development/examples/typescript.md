@@ -138,7 +138,7 @@ test('service calls repository', async () => {
   const service = new UserService(mockRepo);
   const result = await service.createUser('test@example.com');
 
-  expect(mockRepo.save).toHaveBeenCalledOnce();
+  expect(mockRepo.save).toHaveBeenCalledTimes(1);
   expect(result).toBe(true);
 });
 
