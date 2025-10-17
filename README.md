@@ -14,9 +14,7 @@ This project was originally created by [Jesse Vincent](https://github.com/obra) 
 - **Meta Skills** - Creating, testing, and contributing skills
 
 Plus:
-- **Slash Commands** - `/brainstorm`, `/write-plan`, `/execute-plan`
-- **Skills Search** - Grep-powered discovery of relevant skills
-- **Gap Tracking** - Failed searches logged for skill creation
+- **Slash Commands** - `/superpowers:brainstorm`, `/superpowers:write-plan`, `/superpowers:execute-plan`
 
 ## Installation
 
@@ -35,6 +33,8 @@ Plus:
 /help
 
 # Should see:
+# /superpowers:brainstorm - Interactive design refinement using Socratic method
+# /superpowers:write-plan - Create detailed implementation plans
 # /superpowers:execute-plan - Execute plan in batches with review checkpoints
 ```
 
@@ -45,6 +45,16 @@ Plus:
 Skills are available through the Skill tool in Claude Code. Claude will automatically detect and use relevant skills based on the task at hand.
 
 ### Using Slash Commands
+
+**Brainstorm a design:**
+```
+/superpowers:brainstorm
+```
+
+**Create an implementation plan:**
+```
+/superpowers:write-plan
+```
 
 **Execute a plan:**
 ```
@@ -71,23 +81,25 @@ Skills are available through the Skill tool in Claude Code. Claude will automati
 - writing-plans - Detailed implementation plans
 - executing-plans - Batch execution with checkpoints
 - dispatching-parallel-agents - Concurrent subagent workflows
-- remembering-conversations - Search past work
 - using-git-worktrees - Parallel development branches
 - requesting-code-review - Pre-review checklist
 - receiving-code-review - Responding to feedback
+- finishing-a-development-branch - Completion workflows
+
+**Shopify/Rails** (`skills/shopify/`)
+- shopify-code-search - Search Shopify codebase with Grokt
+- rails-database-migrations - Safe zero-downtime migrations
 
 **Meta** (`skills/meta/`)
 - writing-skills - TDD for documentation, create new skills
-- sharing-skills - Contribute skills back via branch and PR
 - testing-skills-with-subagents - Validate skill quality
-- pulling-updates-from-skills-repository - Sync with upstream
-- gardening-skills-wiki - Maintain and improve skills
 
-### Commands
+### Slash Commands
 
-- **brainstorm.md** - Interactive design refinement using Socratic method
-- **write-plan.md** - Create detailed implementation plans
-- **execute-plan.md** - Execute plans in batches with review checkpoints
+Available via `/superpowers:` namespace:
+- **brainstorm** - Interactive design refinement using Socratic method
+- **write-plan** - Create detailed implementation plans
+- **execute-plan** - Execute plans in batches with review checkpoints
 
 
 ## How It Works
