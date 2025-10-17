@@ -166,7 +166,7 @@ grep -q "^\.worktrees/$" .gitignore || grep -q "^worktrees/$" .gitignore
 
 **If NOT in .gitignore:**
 
-Per Jesse's rule "Fix broken things immediately":
+Per the rule "Fix broken things immediately":
 1. Add appropriate line to .gitignore
 2. Commit the change
 3. Proceed with worktree creation

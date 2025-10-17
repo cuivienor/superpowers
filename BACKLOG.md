@@ -1,6 +1,6 @@
 # Superpowers Skills Enhancement Backlog
 
-This file tracks planned enhancements and polish for the superpowers skills library, specifically for Shopify/Ruby work.
+This file tracks planned enhancements for the personal superpowers skills library.
 
 ## Completed Enhancements
 

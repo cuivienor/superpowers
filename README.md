@@ -2,16 +2,9 @@
 
 Give Claude Code superpowers with a comprehensive skills library of proven techniques, patterns, and tools.
 
-## Architecture
+## Attribution
 
-The superpowers plugin is a minimal shim that:
-- Clones/updates the [superpowers-skills](https://github.com/obra/superpowers-skills) repository to `~/.config/superpowers/skills/`
-- Registers hooks that load skills from the local repository
-- Offers users the option to fork the skills repo for contributions
-
-All skills, scripts, and documentation live in the separate [superpowers-skills](https://github.com/obra/superpowers-skills) repository. Edit skills locally, commit changes, and contribute back via pull requests.
-
-**Skills Repository:** https://github.com/obra/superpowers-skills
+This project was originally created by [Jesse Vincent](https://github.com/obra) and is licensed under the MIT License. This fork has been substantially modified with new skills and enhancements for personal use.
 
 ## What You Get
 
@@ -25,21 +18,15 @@ Plus:
 - **Skills Search** - Grep-powered discovery of relevant skills
 - **Gap Tracking** - Failed searches logged for skill creation
 
-## Learn More
-
-Read the introduction: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
-
 ## Installation
 
-### Via Plugin Marketplace (Recommended)
+### Via Plugin Marketplace
 
 ```bash
 # In Claude Code
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
+/plugin marketplace add cuivienor/cuivienor-marketplace
+/plugin install superpowers@cuivienor-marketplace
 ```
-
-The plugin automatically handles skills repository setup on first run.
 
 ### Verify Installation
 
@@ -48,51 +35,20 @@ The plugin automatically handles skills repository setup on first run.
 /help
 
 # Should see:
-# /brainstorm - Interactive design refinement
-# /write-plan - Create implementation plan
-# /execute-plan - Execute plan in batches
+# /superpowers:execute-plan - Execute plan in batches with review checkpoints
 ```
-
-## Updating Skills
-
-The plugin fetches and fast-forwards your local skills repository on each session start. If your local branch has diverged, Claude notifies you to use the pulling-updates-from-skills-repository skill.
-
-## Contributing Skills
-
-If you forked the skills repository during setup, you can contribute improvements:
-
-1. Edit skills in `~/.config/superpowers/skills/`
-2. Commit your changes
-3. Push to your fork
-4. Open a PR to `obra/superpowers-skills`
 
 ## Quick Start
 
-### Finding Skills
+### Using Skills
 
-Find skills before starting any task:
-
-```bash
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills              # All skills with descriptions
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills test         # Filter by pattern
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills 'TDD|debug'  # Regex pattern
-```
+Skills are available through the Skill tool in Claude Code. Claude will automatically detect and use relevant skills based on the task at hand.
 
 ### Using Slash Commands
 
-**Brainstorm a design:**
+**Execute a plan:**
 ```
-/brainstorm
-```
-
-**Create an implementation plan:**
-```
-/write-plan
-```
-
-**Execute the plan:**
-```
-/execute-plan
+/superpowers:execute-plan
 ```
 
 ## What's Inside
@@ -133,25 +89,12 @@ ${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills 'TDD|debug'  # Regex 
 - **write-plan.md** - Create detailed implementation plans
 - **execute-plan.md** - Execute plans in batches with review checkpoints
 
-### Tools
-
-- **find-skills** - Unified skill discovery with descriptions
-- **skill-run** - Generic runner for any skill script
-- **search-conversations** - Semantic search of past Claude sessions (in remembering-conversations skill)
-
-**Using tools:**
-```bash
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills              # Show all skills
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/find-skills pattern      # Search skills
-${SUPERPOWERS_SKILLS_ROOT}/skills/using-skills/skill-run <path> [args]  # Run any skill script
-```
 
 ## How It Works
 
-1. **SessionStart Hook** - Clone/update skills repo, inject skills context
-2. **Skills Discovery** - `find-skills` shows all available skills with descriptions
+1. **SessionStart Hook** - Injects skills context into Claude Code sessions
+2. **Skills Discovery** - Claude automatically identifies relevant skills for tasks
 3. **Mandatory Workflow** - Skills become required when they exist for your task
-4. **Gap Tracking** - Failed searches logged for skill development
 
 ## Philosophy
 
@@ -167,5 +110,5 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Marketplace**: https://github.com/obra/superpowers-marketplace
+- **Issues**: https://github.com/cuivienor/superpowers/issues
+- **Repository**: https://github.com/cuivienor/superpowers
