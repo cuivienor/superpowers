@@ -61,6 +61,23 @@ Skills are available through the Skill tool in Claude Code. Claude will automati
 /superpowers:execute-plan
 ```
 
+## Language Support
+
+Skills use **Ruby/Rails** as the default language throughout examples.
+
+**Language-specific patterns** are available for:
+- TypeScript (Jest, Vitest, React Testing Library)
+- Python (pytest, Django)
+- Go (testing package, testify)
+
+Skills with language-specific examples:
+- test-driven-development
+- testing-anti-patterns
+- condition-based-waiting
+- defense-in-depth
+
+When using these skills in a non-Ruby project, check the `examples/` directory in each skill for language-specific patterns.
+
 ## What's Inside
 
 ### Skills Library

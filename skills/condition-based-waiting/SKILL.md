@@ -5,6 +5,18 @@ description: Use when tests have race conditions, timing dependencies, or incons
 
 # Condition-Based Waiting
 
+## Language-Specific Examples
+
+This skill uses **Ruby/Rails** as the default.
+
+For language-specific patterns, see:
+- **Ruby/Rails** (Capybara, RSpec, Minitest): `@examples/ruby.md`
+- **TypeScript** (Jest, Vitest, Playwright): `@examples/typescript.md`
+- **Python** (pytest, asyncio): `@examples/python.md`
+- **Go** (testing, channels, context): `@examples/go.md`
+
+---
+
 ## Overview
 
 Flaky tests often guess at timing with arbitrary delays. This creates race conditions where tests pass on fast machines but fail under load or in CI.
@@ -38,72 +50,68 @@ digraph when_to_use {
 
 ## Core Pattern
 
-```typescript
-// ❌ BEFORE: Guessing at timing
-await new Promise(r => setTimeout(r, 50));
-const result = getResult();
-expect(result).toBeDefined();
+```ruby
+# ❌ BEFORE: Guessing at timing
+sleep(0.05)
+result = get_result
+assert_not_nil result
 
-// ✅ AFTER: Waiting for condition
-await waitFor(() => getResult() !== undefined);
-const result = getResult();
-expect(result).toBeDefined();
+# ✅ AFTER: Waiting for condition
+wait_for { get_result }
+result = get_result
+assert_not_nil result
 ```
 
 ## Quick Patterns
 
 | Scenario | Pattern |
 |----------|---------|
-| Wait for event | `waitFor(() => events.find(e => e.type === 'DONE'))` |
-| Wait for state | `waitFor(() => machine.state === 'ready')` |
-| Wait for count | `waitFor(() => items.length >= 5)` |
-| Wait for file | `waitFor(() => fs.existsSync(path))` |
-| Complex condition | `waitFor(() => obj.ready && obj.value > 10)` |
+| Wait for event | `wait_for { events.find { |e| e.type == 'DONE' } }` |
+| Wait for state | `wait_for { machine.state == 'ready' }` |
+| Wait for count | `wait_for { items.length >= 5 }` |
+| Wait for file | `wait_for { File.exist?(path) }` |
+| Complex condition | `wait_for { obj.ready && obj.value > 10 }` |
 
 ## Implementation
 
 Generic polling function:
-```typescript
-async function waitFor<T>(
-  condition: () => T | undefined | null | false,
-  description: string,
-  timeoutMs = 5000
-): Promise<T> {
-  const startTime = Date.now();
+```ruby
+def wait_for(description = "condition", timeout: 5.0, interval: 0.01)
+  start_time = Time.now
 
-  while (true) {
-    const result = condition();
-    if (result) return result;
+  loop do
+    result = yield
+    return result if result
 
-    if (Date.now() - startTime > timeoutMs) {
-      throw new Error(`Timeout waiting for ${description} after ${timeoutMs}ms`);
-    }
+    if Time.now - start_time > timeout
+      raise "Timeout waiting for #{description} after #{timeout}s"
+    end
 
-    await new Promise(r => setTimeout(r, 10)); // Poll every 10ms
-  }
-}
+    sleep(interval) # Poll every 10ms by default
+  end
+end
 ```
 
-See @example.ts for complete implementation with domain-specific helpers (`waitForEvent`, `waitForEventCount`, `waitForEventMatch`) from actual debugging session.
+See `@examples/ruby.md` for Rails-specific helpers (Capybara, RSpec) and `@examples/typescript.md` for complete implementation with domain-specific helpers (`waitForEvent`, `waitForEventCount`, `waitForEventMatch`) from actual debugging session.
 
 ## Common Mistakes
 
-**❌ Polling too fast:** `setTimeout(check, 1)` - wastes CPU
-**✅ Fix:** Poll every 10ms
+**❌ Polling too fast:** `sleep(0.001)` - wastes CPU
+**✅ Fix:** Poll every 10ms (0.01s)
 
 **❌ No timeout:** Loop forever if condition never met
 **✅ Fix:** Always include timeout with clear error
 
 **❌ Stale data:** Cache state before loop
-**✅ Fix:** Call getter inside loop for fresh data
+**✅ Fix:** Call method/block inside loop for fresh data
 
 ## When Arbitrary Timeout IS Correct
 
-```typescript
-// Tool ticks every 100ms - need 2 ticks to verify partial output
-await waitForEvent(manager, 'TOOL_STARTED'); // First: wait for condition
-await new Promise(r => setTimeout(r, 200));   // Then: wait for timed behavior
-// 200ms = 2 ticks at 100ms intervals - documented and justified
+```ruby
+# Tool ticks every 100ms - need 2 ticks to verify partial output
+wait_for { manager.event?('TOOL_STARTED') } # First: wait for condition
+sleep(0.2)                                   # Then: wait for timed behavior
+# 200ms = 2 ticks at 100ms intervals - documented and justified
 ```
 
 **Requirements:**

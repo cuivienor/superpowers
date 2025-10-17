@@ -5,6 +5,17 @@ description: Use when invalid data causes failures deep in execution, requiring 
 
 # Defense-in-Depth Validation
 
+## Language-Specific Examples
+
+This skill uses **Ruby/Rails** as the default.
+
+For language-specific validation patterns, see:
+- **TypeScript** (Express, NestJS): `@examples/typescript.md`
+- **Python** (Django): `@examples/python.md`
+- **Go** (net/http, sqlc): `@examples/go.md`
+
+---
+
 ## Overview
 
 When you fix a bug caused by invalid data, adding validation at one place feels sufficient. But that single check can be bypassed by different code paths, refactoring, or mocks.

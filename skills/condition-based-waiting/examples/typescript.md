@@ -1,3 +1,14 @@
+# Condition-Based Waiting: TypeScript Examples
+
+> **Note:** This file contains TypeScript-specific patterns. For core condition-based waiting principles, see the main SKILL.md.
+
+## Language-Specific Patterns
+
+### Complete Implementation
+
+This is a complete implementation of condition-based waiting utilities from a real debugging session (2025-10-03) that fixed 15 flaky tests by replacing arbitrary timeouts.
+
+```typescript
 // Complete implementation of condition-based waiting utilities
 // From: Lace test infrastructure improvements (2025-10-03)
 // Context: Fixed 15 flaky tests by replacing arbitrary timeouts
@@ -134,25 +145,87 @@ export function waitForEventMatch(
     check();
   });
 }
+```
 
-// Usage example from actual debugging session:
-//
-// BEFORE (flaky):
-// ---------------
-// const messagePromise = agent.sendMessage('Execute tools');
-// await new Promise(r => setTimeout(r, 300)); // Hope tools start in 300ms
-// agent.abort();
-// await messagePromise;
-// await new Promise(r => setTimeout(r, 50));  // Hope results arrive in 50ms
-// expect(toolResults.length).toBe(2);         // Fails randomly
-//
-// AFTER (reliable):
-// ----------------
-// const messagePromise = agent.sendMessage('Execute tools');
-// await waitForEventCount(threadManager, threadId, 'TOOL_CALL', 2); // Wait for tools to start
-// agent.abort();
-// await messagePromise;
-// await waitForEventCount(threadManager, threadId, 'TOOL_RESULT', 2); // Wait for results
-// expect(toolResults.length).toBe(2); // Always succeeds
-//
-// Result: 60% pass rate → 100%, 40% faster execution
+### Generic Wait Helper
+
+For general-purpose condition polling:
+
+```typescript
+async function waitFor<T>(
+  condition: () => T | undefined | null | false,
+  description: string,
+  timeoutMs = 5000
+): Promise<T> {
+  const startTime = Date.now();
+
+  while (true) {
+    const result = condition();
+    if (result) return result;
+
+    if (Date.now() - startTime > timeoutMs) {
+      throw new Error(`Timeout waiting for ${description} after ${timeoutMs}ms`);
+    }
+
+    await new Promise(r => setTimeout(r, 10)); // Poll every 10ms
+  }
+}
+```
+
+## Usage Example: Before and After
+
+**BEFORE (flaky):**
+```typescript
+const messagePromise = agent.sendMessage('Execute tools');
+await new Promise(r => setTimeout(r, 300)); // Hope tools start in 300ms
+agent.abort();
+await messagePromise;
+await new Promise(r => setTimeout(r, 50));  // Hope results arrive in 50ms
+expect(toolResults.length).toBe(2);         // Fails randomly
+```
+
+**AFTER (reliable):**
+```typescript
+const messagePromise = agent.sendMessage('Execute tools');
+await waitForEventCount(threadManager, threadId, 'TOOL_CALL', 2); // Wait for tools to start
+agent.abort();
+await messagePromise;
+await waitForEventCount(threadManager, threadId, 'TOOL_RESULT', 2); // Wait for results
+expect(toolResults.length).toBe(2); // Always succeeds
+```
+
+**Result:** 60% pass rate → 100%, 40% faster execution
+
+## TypeScript-Specific Features
+
+### Promise-based polling
+
+TypeScript/JavaScript naturally supports Promise-based async/await, making condition polling clean:
+
+```typescript
+// Wait for DOM element
+await waitFor(() => document.querySelector('.loaded'), 'element to be loaded');
+
+// Wait for state change
+await waitFor(() => store.getState().ready, 'store to be ready');
+
+// Wait for async operation
+await waitFor(async () => await fetchStatus() === 'complete', 'operation to complete');
+```
+
+### Testing Libraries
+
+**Jest/Vitest:** Built-in `waitFor` in testing libraries:
+
+```typescript
+import { waitFor } from '@testing-library/react';
+
+await waitFor(() => expect(screen.getByText('Loaded')).toBeInTheDocument());
+```
+
+**Playwright:** Built-in waiting for web elements:
+
+```typescript
+await page.waitForSelector('.loaded');
+await page.waitForFunction(() => window.myApp.ready === true);
+```
