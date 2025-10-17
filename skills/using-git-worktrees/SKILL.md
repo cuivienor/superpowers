@@ -13,6 +13,111 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 **Announce at start:** "I'm using the Using Git Worktrees skill to set up an isolated workspace."
 
+## Shopify Monorepo (shop/world)
+
+**When working in the shop/world monorepo, use `dev tree` commands instead of manual git worktree.**
+
+The dev tool handles sparse checkout and zone management automatically.
+
+### Creating a Worktree in the Monorepo
+
+```bash
+# Create worktree on branch "feature-name"
+/opt/dev/bin/dev tree add feature-name
+
+# Create and immediately switch to it
+/opt/dev/bin/dev tree add feature-name -s
+```
+
+**What this does:**
+1. Creates worktree at `~/world/trees/feature-name/`
+2. Checks out branch `feature-name`
+3. Sets up sparse checkout (only materializes zones you navigate to)
+
+### Navigating Zones in a Worktree
+
+```bash
+# Navigate to a zone in specific worktree
+/opt/dev/bin/dev cd //zone-name -t worktree-name
+
+# Navigate to zone in current worktree
+/opt/dev/bin/dev cd //zone-name -t .
+
+# Navigate to zone in main worktree (default)
+/opt/dev/bin/dev cd //zone-name
+```
+
+**Examples:**
+```bash
+# Main worktree
+/opt/dev/bin/dev cd //admin
+# → ~/world/trees/root/src//admin
+
+# Feature worktree
+/opt/dev/bin/dev tree add my-feature -s
+/opt/dev/bin/dev cd //admin -t my-feature
+# → ~/world/trees/my-feature/src//admin
+```
+
+### Managing Worktrees
+
+```bash
+# List all worktrees
+/opt/dev/bin/dev tree list
+
+# Show current worktree info
+/opt/dev/bin/dev tree show
+
+# Switch to existing worktree
+/opt/dev/bin/dev tree switch worktree-name
+
+# Remove worktree
+/opt/dev/bin/dev tree remove worktree-name
+```
+
+### Project Setup in Monorepo Worktrees
+
+After creating a worktree and navigating to a zone:
+
+```bash
+# Run from within the zone directory
+/opt/dev/bin/dev up
+```
+
+This automatically:
+- Sets up zone dependencies
+- Runs necessary installations
+- Configures the environment
+
+### Verification
+
+```bash
+# Run tests for the zone
+/opt/dev/bin/dev test
+
+# Check coverage
+/opt/dev/bin/dev coverage --include-branch-commits
+```
+
+**If tests fail:** Report failures, ask whether to proceed or investigate.
+
+### Quick Reference (Monorepo)
+
+| Task | Command |
+|------|---------|
+| Create worktree | `dev tree add feature-name` |
+| Create + switch | `dev tree add feature-name -s` |
+| Navigate to zone | `dev cd //zone -t worktree-name` |
+| List worktrees | `dev tree list` |
+| Setup zone | `dev up` (from zone directory) |
+| Run tests | `dev test` |
+
+---
+
+## Standalone Repositories
+
+For non-monorepo projects, use manual git worktree commands.
+
 ## Directory Selection Process
 
 Follow this priority order:
