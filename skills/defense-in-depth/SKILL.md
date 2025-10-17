@@ -89,6 +89,142 @@ async function gitInit(directory: string) {
 }
 ```
 
+## Rails Example: Email Validation
+
+**Scenario:** Ensure users always have valid, unique emails
+
+### Layer 1: Database Constraints
+**Purpose:** Enforce at storage layer - cannot be bypassed
+
+```ruby
+# Migration
+class AddEmailToUsers < ActiveRecord::Migration[7.0]
+  def change
+    add_column :users, :email, :string, null: false
+    add_index :users, :email, unique: true
+  end
+end
+```
+
+**Why:** Protects against:
+- Bulk SQL operations (`update_all`, `insert_all`)
+- Console operations bypassing validations
+- Race conditions with concurrent creates
+
+### Layer 2: Model Validations
+**Purpose:** Friendly error messages, business logic checks
+
+```ruby
+# app/models/user.rb
+class User < ApplicationRecord
+  validates :email, presence: true
+  validates :email, uniqueness: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+
+  before_validation :normalize_email
+
+  private
+
+  def normalize_email
+    self.email = email.to_s.strip.downcase
+  end
+end
+```
+
+**Why:** Protects against:
+- Invalid email formats before database hit
+- Provides user-friendly error messages
+- Normalizes data before validation
+
+### Layer 3: Controller Strong Parameters
+**Purpose:** Prevent mass assignment vulnerabilities
+
+```ruby
+# app/controllers/users_controller.rb
+class UsersController < ApplicationController
+  def create
+    @user = User.new(user_params)
+
+    if @user.save
+      redirect_to @user
+    else
+      render :new
+    end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:email, :name)
+  end
+end
+```
+
+**Why:** Protects against:
+- Malicious params injecting admin flags
+- Unintended attribute updates
+- Security vulnerabilities
+
+### Layer 4: Service Layer (Optional)
+**Purpose:** Encapsulate complex business logic, add context-specific checks
+
+```ruby
+# app/services/user_creator.rb
+class UserCreator
+  class InvalidEmail < StandardError; end
+
+  def call(email:, name:, created_by:)
+    raise InvalidEmail, "Email required" if email.blank?
+    raise InvalidEmail, "Invalid email domain" if blocked_domain?(email)
+
+    Rails.logger.info("Creating user", {
+      email: email,
+      created_by: created_by,
+      ip: RequestStore.store[:ip]
+    })
+
+    User.create!(email: email, name: name)
+  end
+
+  private
+
+  def blocked_domain?(email)
+    domain = email.split('@').last
+    BlockedDomain.exists?(domain: domain)
+  end
+end
+```
+
+**Why:** Protects against:
+- Business-specific rules (blocked domains)
+- Missing audit trail
+- Complex validations not suitable for models
+
+### Why All Four Layers?
+
+Each layer catches what others miss:
+
+**Database constraints** catch:
+- Direct SQL bypassing model
+- Race conditions
+- Console mistakes
+
+**Model validations** catch:
+- Invalid formats early
+- Provide friendly errors
+- Normalize data
+
+**Strong parameters** catch:
+- Mass assignment attacks
+- Unintended params
+
+**Service layer** catches:
+- Business rules too complex for models
+- Cross-model validations
+- Context-specific checks
+
+**Real example:** Even with model validations, a developer using `User.create!(email: nil, name: "Test")` in a test factory would bypass validations but hit database constraint. The database constraint prevents the bug; the model validation provides a better error message.
+
 ## Applying the Pattern
 
 When you find a bug:
