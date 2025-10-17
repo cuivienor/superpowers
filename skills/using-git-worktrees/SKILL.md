@@ -13,9 +13,11 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 **Announce at start:** "I'm using the Using Git Worktrees skill to set up an isolated workspace."
 
-## Shopify Monorepo (shop/world)
+## Shopify Monorepo (shop/world ONLY)
 
-**When working in the shop/world monorepo, use `dev tree` commands instead of manual git worktree.**
+**IMPORTANT: `dev tree` commands only work in the shop/world monorepo. For other Shopify repositories, use the manual git worktree process below.**
+
+When working in the shop/world monorepo, use `dev tree` commands instead of manual git worktree.
 
 The dev tool handles sparse checkout and zone management automatically.
 
@@ -148,7 +150,7 @@ If no directory exists and no CLAUDE.md preference:
 No worktree directory found. Where should I create worktrees?
 
 1. .worktrees/ (project-local, hidden)
-2. ~/.config/superpowers/worktrees/<project-name>/ (global location)
+2. ~/worktrees/github.com/<org>/<repo>/ (global location, mirrors clone structure)
 
 Which would you prefer?
 ```
@@ -173,16 +175,22 @@ Per the rule "Fix broken things immediately":
 
 **Why critical:** Prevents accidentally committing worktree contents to repository.
 
-### For Global Directory (~/.config/superpowers/worktrees)
+### For Global Directory (~/worktrees/...)
 
 No .gitignore verification needed - outside project entirely.
 
 ## Creation Steps
 
-### 1. Detect Project Name
+### 1. Detect Project Path Components
 
 ```bash
-project=$(basename "$(git rev-parse --show-toplevel)")
+# Get the full path to repository root
+repo_root=$(git rev-parse --show-toplevel)
+
+# Extract org and repo from the path
+# E.g., /Users/name/src/github.com/Shopify/binks → github.com/Shopify/binks
+# This handles paths like ~/src/github.com/org/repo
+repo_path=$(echo "$repo_root" | sed 's|.*/\(github\.com/[^/]*/[^/]*\).*|\1|')
 ```
 
 ### 2. Create Worktree
@@ -193,12 +201,14 @@ case $LOCATION in
   .worktrees|worktrees)
     path="$LOCATION/$BRANCH_NAME"
     ;;
-  ~/.config/superpowers/worktrees/*)
-    path="~/.config/superpowers/worktrees/$project/$BRANCH_NAME"
+  ~/worktrees/*)
+    # Mirror the clone structure: ~/worktrees/github.com/org/repo/branch
+    path="~/worktrees/$repo_path/$BRANCH_NAME"
     ;;
 esac
 
-# Create worktree with new branch
+# Create directory structure and worktree with new branch
+mkdir -p "$(dirname "$path")"
 git worktree add "$path" -b "$BRANCH_NAME"
 cd "$path"
 ```
