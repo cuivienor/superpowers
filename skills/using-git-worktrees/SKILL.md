@@ -103,6 +103,9 @@ cd "$path"
 Auto-detect and run appropriate setup:
 
 ```bash
+# Shopify (dev.yml indicates Shopify project)
+if [ -f dev.yml ]; then /opt/dev/bin/dev up; fi
+
 # Node.js
 if [ -f package.json ]; then npm install; fi
 
@@ -123,6 +126,7 @@ Run tests to ensure worktree starts clean:
 
 ```bash
 # Examples - use project-appropriate command
+/opt/dev/bin/dev test  # Shopify projects
 npm test
 cargo test
 pytest

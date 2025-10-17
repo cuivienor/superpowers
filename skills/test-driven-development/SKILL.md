@@ -324,6 +324,164 @@ PASS
 **REFACTOR**
 Extract validation for multiple fields if needed.
 
+## Ruby/Minitest at Shopify
+
+### Test Structure
+
+```ruby
+# Test files must end with _test.rb
+# test/models/email_validator_test.rb
+
+class EmailValidatorTest < ActiveSupport::TestCase
+  setup do
+    @validator = EmailValidator.new
+  end
+
+  test "#valid? returns true for valid email" do
+    assert(@validator.valid?("user@example.com"))
+  end
+
+  test "#valid? returns false for empty email" do
+    refute(@validator.valid?(""))
+  end
+
+  test ".normalize removes whitespace" do
+    assert_equal("user@example.com", EmailValidator.normalize("  user@example.com  "))
+  end
+end
+```
+
+**Key patterns:**
+- Instance methods: `test "#method" do`
+- Class methods: `test ".method" do`
+- Use `setup` and `teardown` for shared state
+- Each test: Setup → Precondition assertions → Action → Result assertions
+
+### Assertions
+
+```ruby
+# Preferred assertions
+assert_equal(expected, actual)           # Equality
+assert_empty(collection)                 # Empty collections
+assert_instance_of(Class, object)        # Type checking
+assert_predicate(object, :method?)       # Boolean methods
+assert_not_equal(expected, actual)       # Inequality
+assert_not_nil(value)                    # Not nil
+
+# NEVER test private methods directly
+# NEVER use send, instance_variable_get/set
+# NEVER use begin/rescue in tests
+```
+
+### Mocking with Mocha
+
+```ruby
+# CORRECT - expects implies assertion
+repository.expects(:update_attributes!).once
+result = service.update(data)
+
+# Multiple calls
+repository.expects(:save!).twice
+repository.expects(:save!).times(3)
+
+# WRONG - Testing mock behavior (see Testing Anti-Patterns skill)
+mock = mock()
+mock.expects(:foo).returns("bar")
+result = my_method(mock)
+assert_equal("bar", result)  # This tests the mock, not your code
+```
+
+### Running Tests
+
+```bash
+# Run single test file
+/opt/dev/bin/dev test path/to/test_file.rb
+
+# Run specific test
+/opt/dev/bin/dev test path/to/test_file.rb:42
+
+# Check coverage (MUST be ≥95% branch)
+/opt/dev/bin/dev coverage --include-branch-commits
+```
+
+### Style Requirements
+
+```ruby
+# Use hash shorthand when keys match variables
+user = User.new
+email = "user@example.com"
+
+# CORRECT
+create_record({ user:, email: })
+
+# WRONG
+create_record({ user: user, email: email })
+
+# Parentheses required for ALL method calls with parameters
+assert_equal(expected, actual)   # CORRECT
+assert_equal expected, actual    # WRONG
+
+# Single line when fits within 120 characters
+```
+
+### Example: Bug Fix (Ruby/Minitest)
+
+**Bug:** Empty email accepted by validator
+
+**RED**
+```ruby
+test "#valid? rejects empty email" do
+  validator = EmailValidator.new
+
+  refute(validator.valid?(""))
+  assert_equal("Email required", validator.error)
+end
+```
+
+**Verify RED**
+```bash
+$ /opt/dev/bin/dev test test/models/email_validator_test.rb
+FAIL: Expected false, got true
+```
+
+**GREEN**
+```ruby
+class EmailValidator
+  attr_reader :error
+
+  def valid?(email)
+    if email.to_s.strip.empty?
+      @error = "Email required"
+      return false
+    end
+    true
+  end
+end
+```
+
+**Verify GREEN**
+```bash
+$ /opt/dev/bin/dev test test/models/email_validator_test.rb
+1 tests, 2 assertions, 0 failures
+```
+
+**REFACTOR**
+Extract empty check if used in multiple validators.
+
+### Coverage Requirements
+
+**MANDATORY at Shopify:**
+```bash
+# Check before implementing
+/opt/dev/bin/dev coverage --include-branch-commits
+
+# Coverage MUST be ≥95% branch
+# Test all permutations of branch conditions
+# Verify coverage after each test addition
+```
+
+Branch coverage, not line coverage. Test all code paths.
+
 ## Verification Checklist
 
 Before marking work complete:

@@ -42,6 +42,8 @@ Skip any step = lying, not verifying
 | Claim | Requires | Not Sufficient |
 |-------|----------|----------------|
 | Tests pass | Test command output: 0 failures | Previous run, "should pass" |
+| Tests pass (Shopify) | `/opt/dev/bin/dev test`: 0 failures | Assuming tests pass |
+| Coverage sufficient (Shopify) | `/opt/dev/bin/dev coverage --include-branch-commits`: ≥95% branch | Line coverage only, skipping check |
 | Linter clean | Linter output: 0 errors | Partial check, extrapolation |
 | Build succeeds | Build command: exit 0 | Linter passing, logs look good |
 | Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
