@@ -323,7 +323,7 @@ Each layer catches what others miss:
 
 **Database constraints** catch:
 - Direct SQL via `connection.cursor()`
-- Bulk operations (`bulk_create`)
+- Bulk operations (`bulk_create` bypasses model-level validation like `clean()` and `save()` but still respects database constraints)
 - Management commands bypassing models
 - Race conditions
 

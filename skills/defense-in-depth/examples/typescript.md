@@ -153,7 +153,7 @@ export class UserService {
         data: input,
       });
     } catch (error) {
-      if (error.code === 'P2002') { // Prisma unique constraint violation
+      if ('code' in error && error.code === 'P2002') { // Prisma unique constraint violation
         throw new Error(`Email already exists: ${input.email}`);
       }
       throw error;
